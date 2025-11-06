@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Modificar Opacidad de PDF</title>
+  <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+</head>
+<body style="font-family: sans-serif; text-align: center; padding: 2em;">
+
+  <h2>Modificar Opacidad de un PDF</h2>
+  <input type="file" id="inputPdf" accept="application/pdf">
+  <br><br>
+  <label>Opacidad (0.1 = muy transparente, 1.0 = normal): </label>
+  <input type="number" id="opacidad" value="0.5" step="0.1" min="0.1" max="1">
+  <br><br>
+  <button onclick="procesarPdf()">Aplicar Opacidad y Descargar</button>
+  <p id="estado"></p>
+
+  <script>
+    async function procesarPdf() {
+      const input = document.getElementById("inputPdf").files[0];
+      const opacidad = parseFloat(document.getElementById("opacidad").value);
+      const estado = document.getElementById("estado");
+      if (!input) {
+        alert("Seleccioná un archivo PDF primero.");
+        return;
+      }
+      estado.textContent = "Procesando...";
+
+      const arrayBuffer = await input.arrayBuffer();
+      const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+      const pages = pdfDoc.getPages();
+
+      // Iterar páginas y aplicar transparencia
+      for (const page of pages) {
+        const { width, height } = page.getSize();
+        page.drawRectangle({
+          x: 0,
+          y: 0,
+          width,
+          height,
+          color: PDFLib.rgb(1, 1, 1),
+          opacity: 1 - opacidad,
+        });
+      }
+
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const enlace = document.createElement("a");
+      enlace.href = URL.createObjectURL(blob);
+      enlace.download = "PDF_opacidad_" + opacidad + ".pdf";
+      enlace.click();
+      estado.textContent = "✅ PDF generado con opacidad " + opacidad;
+    }
+  </script>
+</body>
+</html>
